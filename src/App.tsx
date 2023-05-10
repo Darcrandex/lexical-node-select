@@ -1,35 +1,67 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+/**
+ * @name App
+ * @description
+ * @author darcrand
+ */
 
-function App() {
-  const [count, setCount] = useState(0)
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
+import { $getNodeByKey } from "lexical"
+import { useEffect } from "react"
+import MyEditor, { ContextWrapper } from "./components/MyEditor"
+
+async function getData() {
+  return {
+    code: 200,
+    data: {
+      lastSelectedNodeKey: "1",
+      stateJSON: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1},{"format":"","type":"custom-content","version":1,"id":"0.6427137344962706","nodeKey":"4"},{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}`,
+    },
+  }
+}
+
+function MyPage() {
+  const [editor] = useLexicalComposerContext()
+
+  const onSave = () => {
+    editor.update(() => {
+      const data = JSON.stringify(editor.getEditorState().toJSON())
+      console.log("data", data)
+    })
+  }
+
+  useEffect(() => {
+    getData().then((res) => {
+      editor.update(() => {
+        const state = editor.parseEditorState(JSON.parse(res.data.stateJSON))
+        editor.setEditorState(state)
+
+        // part 2
+        // on got data, select the node by lastSelectedNodeKey
+        const node = $getNodeByKey(res.data.lastSelectedNodeKey)
+        if (node) {
+          // node.setSelected?.(true)
+        }
+      })
+    })
+  }, [editor])
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <button onClick={onSave}>Save</button>
+
+      <MyEditor />
     </>
   )
 }
 
-export default App
+export default function App() {
+  return (
+    <>
+      <h1>Lexical Node Select</h1>
+
+      <ContextWrapper>
+        <MyPage />
+      </ContextWrapper>
+    </>
+  )
+}
